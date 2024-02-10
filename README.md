@@ -1,22 +1,43 @@
-# ft_otp
 
-This is a command line tool written in Rust that implements Time-Based One-Time Password (TOTP) algorithm.
+# 🔐 TOTP
 
-## Features
+## 📄 Overview
+This project is a simple command-line tool created as a school project using Rust. 🎓
+It's designed to generate Time-based One-Time Passwords (TOTP) by encrypting a key and generating a QR code for TOTP app registration. 🕒
 
-- Generate TOTP codes based on a secret key and the current time.
-- Supports custom time step and code length.
-- Easy to use command line interface.
+## ✨ Features
+- **Encrypt Key**: 🔒 Securely encrypts a provided hex key and saves it for TOTP generation.
+- **Generate QR Code**: 📱 Creates a QR code to easily add the encrypted key to a TOTP app.
+- **Generate TOTP**: 🗝️ Produces a TOTP code using the encrypted key and current time.
 
-## Prerequisites
+## 📋 Requirements
+- Rust Programming Language 🦀
 
-- Rust programming language (version X.X.X or higher)
-- [External crate/library for SHA-1 algorithm](https://example.com) (Add installation instructions if necessary)
+## 🚀 Installation
+To set up this project, follow these steps:
+```
+git clone <repository-url>
+cd ft_otp
+cargo build --release
+```
 
-## Installation
+## 🛠️ Usage
+Execute the program with options to encrypt a key, generate a QR code, or produce a TOTP code:
+```
+./target/release/ft_otp [OPTIONS]
+```
 
-1. Clone the repository:
+### Options
+- `-g, --generate <path>`: 🔐 Encrypt and save a hex key from a specified path.
+- `-q, --qrcode <file>`: 🖼️ Specify the output file for the QR code (default `qr.png`).
+- `-k, --key <path>`: 🗝️ Use an encrypted key file to generate the TOTP code (default `ft_otp.key`).
 
-   ```shell
-   git clone https://github.com/your-username/your-repo.git
-   ```
+## 📝 Examples
+- To encrypt a key and generate a QR code:
+  ```
+  ./target/release/ft_otp --generate your_key_path --qrcode your_qr_code.png
+  ```
+- To generate a TOTP code:
+  ```
+  ./target/release/ft_otp --key your_encrypted_key_file
+  ```
