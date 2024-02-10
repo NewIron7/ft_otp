@@ -1,0 +1,92 @@
+
+use clap::{command, Arg};
+
+mod totp;
+use totp::*;
+
+mod encrypt;
+use encrypt::*;
+
+/// Main function that runs TOTP with a key and the current time
+/// it takes the key as command line argument
+/// and the current time is obtained using the time crate
+/// it then prints the TOTP
+fn main() {
+
+    let matches = command!()
+        .version("1.0")
+        .author("hboissel")
+        .about("Generate TOTP codes from a key")
+        .arg(
+            Arg::new("generate")
+                .short('g')
+                .long("generate")
+                .default_value("")
+                .help("Path to the hex key file to ecrypt the key"),
+        )
+        .arg(
+            Arg::new("qrcode")
+                .short('q')
+                .long("qrcode")
+                .default_value("qr.png")
+                .help("Output file for the QR code to register the key in a TOTP app"),
+        )
+        .arg(
+            Arg::new("key")
+                .short('k')
+                .long("key")
+                .default_value("ft_otp.key")
+                .help("Path to the encrypted key file to generate the TOTP code from"),
+        )
+        .get_matches();
+
+    let hex_key: &String = matches.get_one::<String>("generate").unwrap();
+    let encrypted_key: &String = matches.get_one::<String>("key").unwrap();
+    let qrcode: &String = matches.get_one::<String>("qrcode").unwrap();
+    
+    if !hex_key.is_empty() {
+        save_key(&hex_key);
+        generate_qr_code("ft_otp.key", &qrcode);
+        return;
+    }
+    
+    do_totp(&encrypted_key)
+}
+
+fn do_totp(key_path: &str) {
+    let key = get_key_decrypted(key_path);
+    if key.len() == 0 {
+        return;
+    }
+    let key = key.as_bytes().to_vec();
+    let time = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs();
+    let totp = totp(&key, time);
+
+    println!("🔒 TOTP: {:03} {:03}", totp / 1_000, totp % 1_000);
+}
+
+/// Function that gets the content of the file and encrypts it
+/// and saves the encrypted content in a file "ft_otp.key"
+/// Arguments:
+/// - path: the path to the file to encrypt
+/// Returns:
+/// - none
+fn save_key(path: &str) {
+    let key = std::fs::read_to_string(path);
+    if key.is_err() {
+        println!("❌ Error while reading the key");
+        return;
+    }
+    let key = key.unwrap();
+    if key.len() < 64 {
+        println!("❌ The key is too short, 64 characters are required");
+        return;
+    }
+    let encrypted = encrypt_message(&key);
+    let result_write = std::fs::write("ft_otp.key", encrypted);
+    if result_write.is_err() {
+        println!("❌ Error while writing the key");
+        return;
+    }
+    println!("✅ Key saved");
+}
