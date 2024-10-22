@@ -1,12 +1,14 @@
 
 
-use clap::{command, Arg};
+use clap::{command, Arg, value_parser};
 
 mod totp;
 use totp::*;
 
 mod encrypt;
 use encrypt::*;
+
+mod gui;
 
 /// Main function that runs TOTP with a key and the current time
 /// it takes the key as command line argument
@@ -39,7 +41,25 @@ fn main() {
                 .default_value("ft_otp.key")
                 .help("Path to the encrypted key file to generate the TOTP code from"),
         )
+        .arg(
+            Arg::new("gui")
+                .short('i')
+                .long("gui")
+                .default_value("false")
+                .num_args(0..=1)
+                .require_equals(true)
+                .default_missing_value("true")
+                .value_parser(value_parser!(bool))
+                .help("Recursively download images"),
+        )
         .get_matches();
+    
+    let gui: &bool = matches.get_one::<bool>("gui").unwrap();
+
+    if *gui {
+        gui::run();
+        return;
+    }
 
     let hex_key: &String = matches.get_one::<String>("generate").unwrap();
     let encrypted_key: &String = matches.get_one::<String>("key").unwrap();
