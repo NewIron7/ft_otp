@@ -73,3 +73,16 @@ fn generate_key_encrypt() -> String {
     std::fs::write(".encrypt.key", &key).unwrap();
     key
 }
+
+
+/// Function that takes a String which is the hex key
+/// format: 41a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6
+/// and returns a Vec<u8> of the key
+pub fn hex_key_to_vec(hex_key: &str) -> Result<Vec<u8>, ()> {
+    let key = hex::decode(hex_key);
+    if key.is_err() {
+        return Err(());
+    }
+    let key = key.unwrap();
+    Ok(key)
+}

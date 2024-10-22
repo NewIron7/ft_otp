@@ -1,4 +1,5 @@
 
+
 use clap::{command, Arg};
 
 mod totp;
@@ -22,7 +23,7 @@ fn main() {
                 .short('g')
                 .long("generate")
                 .default_value("")
-                .help("Path to the hex key file to ecrypt the key"),
+                .help("Path to the hex key file to ecrypt the key, 64 bytes min. Hex format: 1234567890abcdef"),
         )
         .arg(
             Arg::new("qrcode")
@@ -45,7 +46,9 @@ fn main() {
     let qrcode: &String = matches.get_one::<String>("qrcode").unwrap();
     
     if !hex_key.is_empty() {
-        save_key(&hex_key);
+        if save_key(&hex_key).is_err() {
+            return;
+        }
         generate_qr_code("ft_otp.key", &qrcode);
         return;
     }
@@ -58,7 +61,11 @@ fn do_totp(key_path: &str) {
     if key.len() == 0 {
         return;
     }
-    let key = key.as_bytes().to_vec();
+    let key = hex_key_to_vec(&key);
+    if key.is_err() {
+        return;
+    }
+    let key = key.unwrap();
     let time = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs();
     let totp = totp(&key, time);
 
@@ -71,22 +78,27 @@ fn do_totp(key_path: &str) {
 /// - path: the path to the file to encrypt
 /// Returns:
 /// - none
-fn save_key(path: &str) {
+fn save_key(path: &str) -> Result<(), ()> {
     let key = std::fs::read_to_string(path);
     if key.is_err() {
         println!("❌ Error while reading the key");
-        return;
+        return Err(());
     }
     let key = key.unwrap();
-    if key.len() < 64 {
-        println!("❌ The key is too short, 64 characters are required");
-        return;
+    if key.len() < 128 {
+        println!("❌ The key is too short, 64 bytes are required so 128 characters in hex format");
+        return Err(());
+    }
+    if hex_key_to_vec(&key).is_err() {
+        println!("❌ The key is not in the correct format. Use hex format: 1234567890abcdef");
+        return Err(());
     }
     let encrypted = encrypt_message(&key);
     let result_write = std::fs::write("ft_otp.key", encrypted);
     if result_write.is_err() {
         println!("❌ Error while writing the key");
-        return;
+        return Err(());
     }
     println!("✅ Key saved");
+    Ok(())
 }

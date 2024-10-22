@@ -1,8 +1,9 @@
 /target
-Cargo.lock
+ft_otp
 
 .encrypt.key
 ft_otp.key
 key.hex
 qr.png
+key.txt
 

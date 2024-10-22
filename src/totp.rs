@@ -3,6 +3,7 @@ use qrcode;
 use image;
 use base32;
 use sha1::{Sha1, Digest};
+use super::encrypt::hex_key_to_vec;
 
 use crate::get_key_decrypted;
 
@@ -97,9 +98,13 @@ pub fn totp(key: &Vec<u8>, time: u64) -> u32 {
 
 pub fn generate_qr_code(path: &str, path_qr: &str) {
     let key = get_key_decrypted(path);
-    let key = key.as_bytes();
+    let key = hex_key_to_vec(&key);
+    if key.is_err() {
+        return;
+    }
+    let key = key.unwrap();
 
-    let key = base32::encode(base32::Alphabet::RFC4648 { padding: false }, key);
+    let key = base32::encode(base32::Alphabet::RFC4648 { padding: false }, &key);
 
     let url = format!("otpauth://totp/ft_otp?secret={}&issuer=hboissel&algorithm=SHA1&digits=6&period=30", key);
 
