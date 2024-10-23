@@ -1,11 +1,6 @@
+use sha1::{Digest, Sha1};
 
-use qrcode;
-use image;
-use base32;
-use sha1::{Sha1, Digest};
-use super::encrypt::hex_key_to_vec;
-
-use crate::get_key_decrypted;
+use crate::encrypt;
 
 /// Function that modifies the key to be the correct length
 /// for the HMAC-SHA1 algorithm
@@ -14,20 +9,22 @@ use crate::get_key_decrypted;
 /// Returns:
 /// - the modified key
 pub fn prepare_key(key: &Vec<u8>) -> Vec<u8> {
-    if key.len() > 64 {
-        let mut hasher = Sha1::new();
-        hasher.update(key);
-        let result = hasher.finalize();
-        let mut key = vec![0; 20];
-        key.copy_from_slice(&result);
-        key.resize(64, 0);
-        key
-    } else if key.len() < 64 {
-        let mut key = key.clone();
-        key.resize(64, 0);
-        key
-    } else {
-        key.clone()
+    match key.len() {
+        64 => key.clone(),
+        0..=63 => {
+            let mut key = key.clone();
+            key.resize(64, 0);
+            key
+        }
+        _ => {
+            let mut hasher = Sha1::new();
+            hasher.update(key);
+            let result = hasher.finalize();
+            let mut key = vec![0; 20];
+            key.copy_from_slice(&result);
+            key.resize(64, 0);
+            key
+        }
     }
 }
 
@@ -72,15 +69,15 @@ pub fn hmac_sha1(key: &Vec<u8>, message: &[u8]) -> Vec<u8> {
 /// - the TOTP
 /// it uses the hmac_sha1 function to compute the HMAC
 /// and the TOTP logic is implemented manually
-pub fn totp(key: &Vec<u8>, time: u64) -> u32 {
+pub fn generate(key: &Vec<u8>, time: u64) -> u32 {
     let time = time / 30;
     let time = time.to_be_bytes();
-    let hmac = hmac_sha1(&key, &time);
+    let hmac = hmac_sha1(key, &time);
     let offset = (hmac[19] & 0xf) as usize;
-    let value = ((hmac[offset] as u32 & 0x7f) << 24) |
-                ((hmac[offset + 1] as u32) << 16) |
-                ((hmac[offset + 2] as u32) << 8) |
-                (hmac[offset + 3] as u32);
+    let value = ((hmac[offset] as u32 & 0x7f) << 24)
+        | ((hmac[offset + 1] as u32) << 16)
+        | ((hmac[offset + 2] as u32) << 8)
+        | (hmac[offset + 3] as u32);
     value % 1_000_000
 }
 
@@ -97,8 +94,11 @@ pub fn totp(key: &Vec<u8>, time: u64) -> u32 {
 // Add the missing import statement for the base32 crate
 
 pub fn generate_qr_code(path: &str, path_qr: &str) {
-    let key = get_key_decrypted(path);
-    let key = hex_key_to_vec(&key);
+    let key = encrypt::get_key_decrypted(path);
+    if key.is_empty() {
+        return;
+    }
+    let key = encrypt::hex_key_to_vec(&key);
     if key.is_err() {
         return;
     }
@@ -106,7 +106,10 @@ pub fn generate_qr_code(path: &str, path_qr: &str) {
 
     let key = base32::encode(base32::Alphabet::RFC4648 { padding: false }, &key);
 
-    let url = format!("otpauth://totp/ft_otp?secret={}&issuer=hboissel&algorithm=SHA1&digits=6&period=30", key);
+    let url = format!(
+        "otpauth://totp/ft_otp?secret={}&issuer=hboissel&algorithm=SHA1&digits=6&period=30",
+        key
+    );
 
     let code = qrcode::QrCode::new(url).unwrap();
     let image = code.render::<image::Luma<u8>>().build();

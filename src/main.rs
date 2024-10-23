@@ -1,21 +1,15 @@
-
-
-use clap::{command, Arg, value_parser};
-
-mod totp;
-use totp::*;
+use clap::{command, value_parser, Arg};
 
 mod encrypt;
-use encrypt::*;
-
 mod gui;
+mod totp;
+mod utils;
 
 /// Main function that runs TOTP with a key and the current time
 /// it takes the key as command line argument
 /// and the current time is obtained using the time crate
 /// it then prints the TOTP
 fn main() {
-
     let matches = command!()
         .version("1.0")
         .author("hboissel")
@@ -53,73 +47,32 @@ fn main() {
                 .help("Recursively download images"),
         )
         .get_matches();
-    
+
     let gui: &bool = matches.get_one::<bool>("gui").unwrap();
-
-    if *gui {
-        gui::run();
-        return;
-    }
-
     let hex_key: &String = matches.get_one::<String>("generate").unwrap();
     let encrypted_key: &String = matches.get_one::<String>("key").unwrap();
     let qrcode: &String = matches.get_one::<String>("qrcode").unwrap();
-    
-    if !hex_key.is_empty() {
-        if save_key(&hex_key).is_err() {
+
+    if *gui {
+        let gui_state = gui::run(
+            "key.hex".to_string(),
+            encrypted_key.to_string(),
+            qrcode.to_string(),
+        );
+        if gui_state.is_err() {
+            println!("❌ Error while running the GUI");
             return;
         }
-        generate_qr_code("ft_otp.key", &qrcode);
         return;
     }
-    
-    let _ = do_totp(&encrypted_key);
-}
 
-fn do_totp(key_path: &str) -> Result<u32, ()>{
-    let key = get_key_decrypted(key_path);
-    if key.len() == 0 {
-        return Err(());
+    if !hex_key.is_empty() {
+        if utils::save_key(hex_key, encrypted_key).is_err() {
+            return;
+        }
+        totp::generate_qr_code(encrypted_key, qrcode);
+        return;
     }
-    let key = hex_key_to_vec(&key);
-    if key.is_err() {
-        return Err(());
-    }
-    let key = key.unwrap();
-    let time = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs();
-    let totp = totp(&key, time);
 
-    println!("🔒 TOTP: {:03} {:03}", totp / 1_000, totp % 1_000);
-    Ok(totp)
-}
-
-/// Function that gets the content of the file and encrypts it
-/// and saves the encrypted content in a file "ft_otp.key"
-/// Arguments:
-/// - path: the path to the file to encrypt
-/// Returns:
-/// - none
-fn save_key(path: &str) -> Result<(), ()> {
-    let key = std::fs::read_to_string(path);
-    if key.is_err() {
-        println!("❌ Error while reading the key");
-        return Err(());
-    }
-    let key = key.unwrap();
-    if key.len() < 128 {
-        println!("❌ The key is too short, 64 bytes are required so 128 characters in hex format");
-        return Err(());
-    }
-    if hex_key_to_vec(&key).is_err() {
-        println!("❌ The key is not in the correct format. Use hex format: 1234567890abcdef");
-        return Err(());
-    }
-    let encrypted = encrypt_message(&key);
-    let result_write = std::fs::write("ft_otp.key", encrypted);
-    if result_write.is_err() {
-        println!("❌ Error while writing the key");
-        return Err(());
-    }
-    println!("✅ Key saved");
-    Ok(())
+    let _ = utils::do_totp(encrypted_key);
 }

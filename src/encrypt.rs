@@ -1,7 +1,6 @@
-use hex;
+use rand::RngCore;
 use rand_chacha::ChaChaRng;
 use rand_core::SeedableRng;
-use rand::RngCore;
 
 use magic_crypt::{new_magic_crypt, MagicCryptTrait};
 
@@ -56,8 +55,7 @@ pub fn get_key_decrypted(path: &str) -> String {
     decrypt_message(&key)
 }
 
-
-/// Function that generate a key of 256 bits and save it 
+/// Function that generate a key of 256 bits and save it
 /// in a file ".encrypt.key"
 /// uses the ChaChaRng to generate the key
 /// Arguments:
@@ -73,7 +71,6 @@ fn generate_key_encrypt() -> String {
     std::fs::write(".encrypt.key", &key).unwrap();
     key
 }
-
 
 /// Function that takes a String which is the hex key
 /// format: 41a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6

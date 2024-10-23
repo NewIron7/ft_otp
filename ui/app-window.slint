@@ -1,0 +1,97 @@
+import { LineEdit, Button, VerticalBox } from "std-widgets.slint";
+
+export component MainWindow inherits Window {
+    no-frame: false;
+    title: "ft_otp";
+    background: #313e50;
+
+    in property <string> info_generate: "";
+    in property <string> info_totp: "";
+    in property <string> totp_code: "___ ___";
+    in property <image> qr_code_image: @image-url("");
+    callback generate-otp_key(string, string);
+    callback generate-totp(string);
+
+    GridLayout {
+        spacing: 5px;
+        padding: 10px;
+        Row {
+            Text {
+                font-size: 30px;
+                font-weight: 900;
+                text: "ft_otp";
+                color: #7189a8;
+                height: 50px;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+        }
+        Row {
+            VerticalBox {
+                hex-key-path := LineEdit {
+                    placeholder-text: "Insert hex key path (defautl: ./key.hex)";
+                    horizontal-alignment: center;
+                    height: 30px;
+                }
+                qr-code-path := LineEdit {
+                    placeholder-text: "Insert qr code path (defautl: ./qr.png)";
+                    horizontal-alignment: center;
+                    height: 30px;
+                }
+                Button {
+                    text: "Generate ft_otp.key & QR Code";
+                    height: 30px;
+                    primary: true;
+                    clicked => {generate-otp_key(hex-key-path.text, qr-code-path.text);}
+                }
+                Text {
+                    text: info_generate;
+                    font-size: 20px;
+                }
+                Image {
+                    image-fit: ImageFit.contain;
+                    image-rendering: ImageRendering.smooth;
+                    source: qr_code_image;
+                    vertical-alignment: center;
+                    horizontal-alignment: center;
+                    width: 200px;
+                    height: 200px;
+                }
+            }
+            VerticalBox {
+                otp-key-path := LineEdit {
+                    placeholder-text: "Insert ft_otp.key path (defautl: ./ft_otp.key)";
+                    horizontal-alignment: center;
+                    accessible-role: AccessibleRole.switch;
+                    height: 30px;
+                }
+                Button {
+                    text: "Generate TOTP";
+                    primary: true;
+                    height: 30px;
+                    clicked => {
+                        generate-totp(otp-key-path.text);
+                        timer.running = true;
+                    }
+                }
+                Text {
+                    text: info_totp;
+                    font-size: 20px;
+                }
+                Text {
+                    text: "TOTP: " + totp_code;
+                    font-size: 30px;
+                    font-weight: 900;
+                    color: #7189a8;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+                timer := Timer {
+                    running: false;
+                    interval: 1s;
+                    triggered => {generate-totp(otp-key-path.text);}
+                }
+            } 
+        }
+    }
+}
