@@ -44,7 +44,7 @@ fn main() {
                 .require_equals(true)
                 .default_missing_value("true")
                 .value_parser(value_parser!(bool))
-                .help("Recursively download images"),
+                .help("GUI interface"),
         )
         .get_matches();
 
