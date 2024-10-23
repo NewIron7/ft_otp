@@ -4,6 +4,6 @@ ft_otp
 .encrypt.key
 ft_otp.key
 key.hex
-qr.png
+*.png
 key.txt
 

@@ -1,3 +1,3 @@
 pub fn run() {
-    println!("Running GUI");
+    println!("Hello from gui.rs");
 }

@@ -73,23 +73,24 @@ fn main() {
         return;
     }
     
-    do_totp(&encrypted_key)
+    let _ = do_totp(&encrypted_key);
 }
 
-fn do_totp(key_path: &str) {
+fn do_totp(key_path: &str) -> Result<u32, ()>{
     let key = get_key_decrypted(key_path);
     if key.len() == 0 {
-        return;
+        return Err(());
     }
     let key = hex_key_to_vec(&key);
     if key.is_err() {
-        return;
+        return Err(());
     }
     let key = key.unwrap();
     let time = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs();
     let totp = totp(&key, time);
 
     println!("🔒 TOTP: {:03} {:03}", totp / 1_000, totp % 1_000);
+    Ok(totp)
 }
 
 /// Function that gets the content of the file and encrypts it
