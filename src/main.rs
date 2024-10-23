@@ -19,7 +19,7 @@ fn main() {
                 .short('g')
                 .long("generate")
                 .default_value("")
-                .help("Path to the hex key file to ecrypt the key, 64 bytes min. Hex format: 1234567890abcdef"),
+                .help("Path to the hex key file to ecrypt the key, 64 bytes min"),
         )
         .arg(
             Arg::new("qrcode")
@@ -74,5 +74,10 @@ fn main() {
         return;
     }
 
-    let _ = utils::do_totp(encrypted_key);
+    let result_totp = utils::do_totp(encrypted_key);
+    if result_totp.is_err() {
+        return;
+    }
+    let result_totp = result_totp.unwrap();
+    println!("🔒 TOTP: {result_totp}");
 }

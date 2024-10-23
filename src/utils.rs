@@ -19,7 +19,7 @@ pub fn save_key(path: &str, path_encrypted_key: &str) -> Result<(), ()> {
         return Err(());
     }
     if encrypt::hex_key_to_vec(&key).is_err() {
-        println!("❌ The key is not in the correct format. Use hex format: 1234567890abcdef");
+        println!("❌ The key is not in the correct format.");
         return Err(());
     }
     let encrypted = encrypt::encrypt_message(&key);
@@ -49,6 +49,5 @@ pub fn do_totp(key_path: &str) -> Result<String, ()> {
     let totp = totp::generate(&key, time);
 
     let totp = format!("{:03} {:03}", totp / 1_000, totp % 1_000);
-    println!("🔒 TOTP: {totp}");
     Ok(totp)
 }
